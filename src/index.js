@@ -68,7 +68,7 @@ class SqsParallel extends EventEmitter {
             return reject(err);
           }
           if (!data.QueueUrls) {
-            return reject("No queues have been found.");
+            return reject(new Error("No queues have been found."));
           }
           this.emit("connection", data.QueueUrls);
           const re = new RegExp(`/[\\d]+/${this.config.name}$`);
@@ -87,6 +87,65 @@ class SqsParallel extends EventEmitter {
 
   readQueue(index) {
     console.log("spinning up " + index);
+    // Call myself on next tick helper
+    const next = () => {
+      process.nextTick(() => this.readQueue(index));
+    };
+    // No listeners or hasn't been connected yet.
+    if (this.listeners("message").length === 0 || !this.url) {
+      return;
+    }
+    this.client.receiveMessage(
+      {
+        QueueUrl: this.url,
+        AttributeNames: ["All"],
+        MaxNumberOfMessages: this.config.maxNumberOfMessages,
+        WaitTimeSeconds: this.config.waitTimeSeconds,
+        VisibilityTimeout:
+          this.config.visibilityTimeout !== null
+            ? this.config.visibilityTimeout
+            : undefined
+      },
+      (err, data) => {
+        if (this.config.debug) {
+          log("Received message from remote queue", data);
+        }
+        if (err) {
+          return this.emit("error", err);
+        }
+        if (!Array.isArray(data.Messages) || data.Messages.length === 0) {
+          return next();
+        }
+        // Emit each message
+        data.Messages.forEach(message => {
+          this.emit("message", {
+            type: "Message",
+            data: JSON.parse(message.Body) || message.Body,
+            message,
+            metadata: data.ResponseMetadata,
+            url: this.url,
+            name: this.config.name,
+            deleteMessage(cb) {
+              return this.deleteMessage(message.ReceiptHandle, cb);
+            },
+            delay(timeout, cb) {
+              return this.changeMessageVisibility(
+                message.ReceiptHandle,
+                timeout,
+                cb
+              );
+            },
+            changeMessageVisibility(timeout, cb) {
+              return this.changeMessageVisibility(
+                message.ReceiptHandle,
+                timeout,
+                cb
+              );
+            }
+          });
+        });
+      }
+    );
   }
 }
 
