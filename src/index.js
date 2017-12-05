@@ -6,6 +6,14 @@ const debug = require("debug");
 const log = debug("sqs-parallel:log");
 const error = debug("sqs-parallel:error");
 
+function jsonParse(str) {
+  let obj;
+  try {
+    obj = JSON.parse(str);
+  } catch (err) {}
+  return obj;
+}
+
 class SqsParallel extends EventEmitter {
   constructor(config = {}) {
     super();
@@ -86,7 +94,6 @@ class SqsParallel extends EventEmitter {
   }
 
   readQueue(index) {
-    console.log("spinning up " + index);
     // Call myself on next tick helper
     const next = () => {
       process.nextTick(() => this.readQueue(index));
@@ -120,26 +127,24 @@ class SqsParallel extends EventEmitter {
         data.Messages.forEach(message => {
           this.emit("message", {
             type: "Message",
-            data: JSON.parse(message.Body) || message.Body,
+            data: jsonParse(message.Body) || message.Body,
             message,
             metadata: data.ResponseMetadata,
             url: this.url,
             name: this.config.name,
-            deleteMessage(cb) {
-              return this.deleteMessage(message.ReceiptHandle, cb);
+            deleteMessage() {
+              return this.deleteMessage(message.ReceiptHandle);
             },
-            delay(timeout, cb) {
+            delay(timeout) {
               return this.changeMessageVisibility(
                 message.ReceiptHandle,
-                timeout,
-                cb
+                timeout
               );
             },
-            changeMessageVisibility(timeout, cb) {
+            changeMessageVisibility(timeout) {
               return this.changeMessageVisibility(
                 message.ReceiptHandle,
-                timeout,
-                cb
+                timeout
               );
             }
           });
