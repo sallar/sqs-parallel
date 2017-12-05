@@ -6,7 +6,9 @@
   "peerDependencies": {
     "aws-sdk": "^2.162.0"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "aws-sdk": "^2.163.0"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -20,5 +22,8 @@
   "bugs": {
     "url": "https://github.com/sallar/sqs-parallel/issues"
   },
-  "homepage": "https://github.com/sallar/sqs-parallel#readme"
+  "homepage": "https://github.com/sallar/sqs-parallel#readme",
+  "dependencies": {
+    "debug": "^3.1.0"
+  }
 }
