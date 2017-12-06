@@ -115,6 +115,7 @@ class SqsParallel extends EventEmitter {
             url: this.url,
             name: this.config.name,
             workerIndex: index,
+            next,
             deleteMessage() {
               return this.deleteMessage(message.ReceiptHandle);
             },
