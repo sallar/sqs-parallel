@@ -64,6 +64,9 @@ class SqsParallel extends EventEmitter {
           return;
         }
       }
+      if (this.client) {
+        return resolve();
+      }
       this.client = new SQS({
         region: this.config.region,
         accessKeyId: this.config.accessKeyId,
@@ -151,6 +154,27 @@ class SqsParallel extends EventEmitter {
         });
       }
     );
+  }
+
+  sendMessage(message = {}) {
+    if (message === null) {
+      message = {};
+    }
+    return this.connect().then(() => {
+      const params = {
+        MessageBody: JSON.stringify(message.body || {}),
+        QueueUrl: this.url,
+        DelaySeconds: typeof message.delay === "number" ? message.delay : 0
+      };
+      return new Promise((resolve, reject) => {
+        this.client.sendMessage(params, (err, data) => {
+          if (err) {
+            return reject(err);
+          }
+          resolve(data);
+        });
+      });
+    });
   }
 }
 
