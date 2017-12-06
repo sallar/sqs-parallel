@@ -1,18 +1,10 @@
 const { SQS } = require("aws-sdk");
 const { EventEmitter } = require("events");
-const { times } = require("./utils");
+const { times, jsonParse } = require("./utils");
 const debug = require("debug");
 
 const log = debug("sqs-parallel:log");
 const error = debug("sqs-parallel:error");
-
-function jsonParse(str) {
-  let obj;
-  try {
-    obj = JSON.parse(str);
-  } catch (err) {}
-  return obj;
-}
 
 class SqsParallel extends EventEmitter {
   constructor(config = {}) {
