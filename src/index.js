@@ -72,12 +72,10 @@ class SqsParallel extends EventEmitter {
         accessKeyId: this.config.accessKeyId,
         secretAccessKey: this.config.secretAccessKey
       });
-      this.client.listQueues(
-        { QueueNamePrefix: this.config.name },
-        (err, data) => {
-          if (err) {
-            return reject(err);
-          }
+      this.client
+        .listQueues({ QueueNamePrefix: this.config.name })
+        .promise()
+        .then(data => {
           if (!data.QueueUrls) {
             return reject(new Error("No queues have been found."));
           }
@@ -91,8 +89,8 @@ class SqsParallel extends EventEmitter {
           } else {
             reject(new Error("Queue not found."));
           }
-        }
-      );
+        })
+        .catch(err => reject(err));
     });
   }
 
@@ -105,8 +103,8 @@ class SqsParallel extends EventEmitter {
     if (this.listeners("message").length === 0 || !this.url) {
       return;
     }
-    this.client.receiveMessage(
-      {
+    this.client
+      .receiveMessage({
         QueueUrl: this.url,
         AttributeNames: ["All"],
         MaxNumberOfMessages: this.config.maxNumberOfMessages,
@@ -115,13 +113,11 @@ class SqsParallel extends EventEmitter {
           this.config.visibilityTimeout !== null
             ? this.config.visibilityTimeout
             : undefined
-      },
-      (err, data) => {
+      })
+      .promise()
+      .then(data => {
         if (this.config.debug) {
           log("Received message from remote queue", data);
-        }
-        if (err) {
-          return this.emit("error", err);
         }
         if (!Array.isArray(data.Messages) || data.Messages.length === 0) {
           return next();
@@ -152,8 +148,10 @@ class SqsParallel extends EventEmitter {
             }
           });
         });
-      }
-    );
+      })
+      .catch(err => {
+        this.emit("error", err);
+      });
   }
 
   sendMessage(message = {}) {
@@ -166,14 +164,7 @@ class SqsParallel extends EventEmitter {
         QueueUrl: this.url,
         DelaySeconds: typeof message.delay === "number" ? message.delay : 0
       };
-      return new Promise((resolve, reject) => {
-        this.client.sendMessage(params, (err, data) => {
-          if (err) {
-            return reject(err);
-          }
-          resolve(data);
-        });
-      });
+      return this.client.sendMessage(params).promise();
     });
   }
 }
