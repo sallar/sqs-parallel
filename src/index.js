@@ -73,22 +73,13 @@ class SqsParallel extends EventEmitter {
         secretAccessKey: this.config.secretAccessKey
       });
       this.client
-        .listQueues({ QueueNamePrefix: this.config.name })
+        .getQueueUrl({
+          QueueName: this.config.name
+        })
         .promise()
         .then(data => {
-          if (!data.QueueUrls) {
-            return reject(new Error("No queues have been found."));
-          }
-          this.emit("connection", data.QueueUrls);
-          const re = new RegExp(`/[\\d]+/${this.config.name}$`);
-          const url = data.QueueUrls.find(item => re.test(item));
-          if (url) {
-            this.emit("connect", url);
-            this.url = url;
-            resolve();
-          } else {
-            reject(new Error("Queue not found."));
-          }
+          this.emit("connect", data.QueueUrl);
+          this.url = data.QueueUrl;
         })
         .catch(err => reject(err));
     });
