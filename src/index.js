@@ -131,6 +131,7 @@ class SqsParallel extends EventEmitter {
             metadata: data.ResponseMetadata,
             url: this.url,
             name: this.config.name,
+            workerIndex: index,
             deleteMessage() {
               return this.deleteMessage(message.ReceiptHandle);
             },
@@ -159,12 +160,36 @@ class SqsParallel extends EventEmitter {
       message = {};
     }
     return this.connect().then(() => {
-      const params = {
-        MessageBody: JSON.stringify(message.body || {}),
-        QueueUrl: this.url,
-        DelaySeconds: typeof message.delay === "number" ? message.delay : 0
-      };
-      return this.client.sendMessage(params).promise();
+      return this.client
+        .sendMessage({
+          MessageBody: JSON.stringify(message.body || {}),
+          QueueUrl: this.url,
+          DelaySeconds: typeof message.delay === "number" ? message.delay : 0
+        })
+        .promise();
+    });
+  }
+
+  deleteMessage(receiptHandle) {
+    return this.connect().then(() => {
+      return this.client
+        .deleteMessage({
+          QueueUrl: this.url,
+          ReceiptHandle: receiptHandle
+        })
+        .promise();
+    });
+  }
+
+  changeMessageVisibility(receiptHandle, timeout = 30) {
+    return this.connect().then(() => {
+      return this.client
+        .changeMessageVisibility({
+          QueueUrl: this.url,
+          ReceiptHandle: receiptHandle,
+          VisibilityTimeout: timeout
+        })
+        .promise();
     });
   }
 }
