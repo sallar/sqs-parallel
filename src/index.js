@@ -116,21 +116,11 @@ class SqsParallel extends EventEmitter {
             name: this.config.name,
             workerIndex: index,
             next,
-            deleteMessage() {
-              return this.deleteMessage(message.ReceiptHandle);
-            },
-            delay(timeout) {
-              return this.changeMessageVisibility(
-                message.ReceiptHandle,
-                timeout
-              );
-            },
-            changeMessageVisibility(timeout) {
-              return this.changeMessageVisibility(
-                message.ReceiptHandle,
-                timeout
-              );
-            }
+            deleteMessage: () => this.deleteMessage(message.ReceiptHandle),
+            delay: timeout =>
+              this.changeMessageVisibility(message.ReceiptHandle, timeout),
+            changeMessageVisibility: timeout =>
+              this.changeMessageVisibility(message.ReceiptHandle, timeout)
           });
         });
       })

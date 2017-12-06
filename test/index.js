@@ -6,6 +6,9 @@ const queue = new SqsParallel({
   concurrency: 4,
   debug: true
 });
-queue.on("message", () => {
-  console.log("GOT MESSAGE");
+queue.on("message", message => {
+  message.deleteMessage().then(() => {
+    console.log("deleted");
+    message.next();
+  });
 });
