@@ -24,9 +24,20 @@
     "type": "git",
     "url": "git+https://github.com/sallar/sqs-parallel.git"
   },
-  "keywords": [],
+  "keywords": [
+    "sqs",
+    "parallel",
+    "aws",
+    "aws-sdk",
+    "amazon",
+    "queue",
+    "queues",
+    "sqs-queue",
+    "parallel-queue",
+    "sqs-queue-parallel"
+  ],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/sallar/sqs-parallel/issues"
   },
