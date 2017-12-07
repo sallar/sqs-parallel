@@ -1,10 +1,10 @@
-const { SQS } = require("aws-sdk");
-const { EventEmitter } = require("events");
-const { times, jsonParse } = require("./utils");
-const debug = require("debug");
+const { SQS } = require('aws-sdk');
+const { EventEmitter } = require('events');
+const { times, jsonParse } = require('./utils');
+const debug = require('debug');
 
-const log = debug("sqs-parallel:log");
-const error = debug("sqs-parallel:error");
+const log = debug('sqs-parallel:log');
+const error = debug('sqs-parallel:error');
 
 class SqsParallel extends EventEmitter {
   constructor(config = {}) {
@@ -19,39 +19,39 @@ class SqsParallel extends EventEmitter {
         visibilityTimeout: null,
         waitTimeSeconds: 20,
         maxNumberOfMessages: 1,
-        name: "",
+        name: '',
         concurrency: 1,
         debug: false
       },
       config
     );
 
-    this.on("newListener", name => {
-      if (name !== "message") {
+    this.on('newListener', name => {
+      if (name !== 'message') {
         return;
       }
-      if (this.client === null || this.listeners("message").length === 1) {
+      if (this.client === null || this.listeners('message').length === 1) {
         return this.connect()
           .then(() => {
             times(this.config.concurrency || 1, index => this.readQueue(index));
           })
           .catch(err => {
-            this.emit("error", err);
+            this.emit('error', err);
           });
       }
     });
 
     if (this.config.debug) {
-      this.on("error", err => error(err));
-      this.on("connection", queues => log("Connecting...", queues));
-      this.on("connect", queue => log("Connected", queue));
+      this.on('error', err => error(err));
+      this.on('connection', queues => log('Connecting...', queues));
+      this.on('connect', queue => log('Connected', queue));
     }
   }
 
   connect() {
     return new Promise((resolve, reject) => {
       if (!this.client || !this.url) {
-        this.once("connect", () => resolve());
+        this.once('connect', () => resolve());
         if (this.client && !this.url) {
           return;
         }
@@ -70,7 +70,7 @@ class SqsParallel extends EventEmitter {
         })
         .promise()
         .then(data => {
-          this.emit("connect", data.QueueUrl);
+          this.emit('connect', data.QueueUrl);
           this.url = data.QueueUrl;
         })
         .catch(err => reject(err));
@@ -83,13 +83,13 @@ class SqsParallel extends EventEmitter {
       process.nextTick(() => this.readQueue(index));
     };
     // No listeners or hasn't been connected yet.
-    if (this.listeners("message").length === 0 || !this.url) {
+    if (this.listeners('message').length === 0 || !this.url) {
       return;
     }
     this.client
       .receiveMessage({
         QueueUrl: this.url,
-        AttributeNames: ["All"],
+        AttributeNames: ['All'],
         MaxNumberOfMessages: this.config.maxNumberOfMessages,
         WaitTimeSeconds: this.config.waitTimeSeconds,
         VisibilityTimeout:
@@ -100,15 +100,15 @@ class SqsParallel extends EventEmitter {
       .promise()
       .then(data => {
         if (this.config.debug) {
-          log("Received message from remote queue", data);
+          log('Received message from remote queue', data);
         }
         if (!Array.isArray(data.Messages) || data.Messages.length === 0) {
           return next();
         }
         // Emit each message
         data.Messages.forEach(message => {
-          this.emit("message", {
-            type: "Message",
+          this.emit('message', {
+            type: 'Message',
             data: jsonParse(message.Body) || message.Body,
             message,
             metadata: data.ResponseMetadata,
@@ -125,7 +125,7 @@ class SqsParallel extends EventEmitter {
         });
       })
       .catch(err => {
-        this.emit("error", err);
+        this.emit('error', err);
       });
   }
 
@@ -138,7 +138,7 @@ class SqsParallel extends EventEmitter {
         .sendMessage({
           MessageBody: JSON.stringify(message.body || {}),
           QueueUrl: this.url,
-          DelaySeconds: typeof message.delay === "number" ? message.delay : 0
+          DelaySeconds: typeof message.delay === 'number' ? message.delay : 0
         })
         .promise();
     });

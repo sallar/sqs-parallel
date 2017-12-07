@@ -7,10 +7,18 @@
     "aws-sdk": "^2.162.0"
   },
   "devDependencies": {
-    "aws-sdk": "^2.163.0"
+    "aws-sdk": "^2.163.0",
+    "husky": "^0.14.3",
+    "lint-staged": "^6.0.0",
+    "prettier": "^1.9.1"
   },
   "scripts": {
+    "format": "prettier --write *.{js,md}",
+    "precommit": "lint-staged",
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "lint-staged": {
+    "*.{js,md}": ["prettier --write", "git add"]
   },
   "repository": {
     "type": "git",
