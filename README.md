@@ -1,5 +1,7 @@
 # sqs-parallel
 
+[![Build Status](https://travis-ci.org/sallar/sqs-parallel.svg?branch=master)](https://travis-ci.org/sallar/sqs-parallel)
+
 🔥 Since [bigluck/sqs-queue-parallel](bigluck/sqs-queue-parallel) is dead and no
 one is checking the issues and PRs, I decided to:
 
