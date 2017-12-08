@@ -15,7 +15,7 @@
   "scripts": {
     "format": "prettier --write *.{js,md}",
     "precommit": "lint-staged",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "DEBUG='sqs-parallel=*' node ./test"
   },
   "lint-staged": {
     "*.{js,md}": ["prettier --write", "git add"]
