@@ -2,8 +2,9 @@
 
 [![Build Status](https://travis-ci.org/sallar/sqs-parallel.svg?branch=master)](https://travis-ci.org/sallar/sqs-parallel)
 
-🔥 Since [bigluck/sqs-queue-parallel](bigluck/sqs-queue-parallel) is dead and no
-one is checking the issues and PRs, I decided to:
+🔥 Since
+[bigluck/sqs-queue-parallel](https://github.com/bigluck/sqs-queue-parallel) is
+dead and no one is checking the issues and PRs, I decided to:
 
 * Rewrite the library in plain JS (look ma! no coffeescript!)
 * Fix bugs and issues reported by users of that repo
