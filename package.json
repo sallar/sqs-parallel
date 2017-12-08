@@ -1,6 +1,6 @@
 {
   "name": "sqs-parallel",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "",
   "main": "src/index.js",
   "peerDependencies": {
@@ -18,7 +18,10 @@
     "test": "DEBUG='sqs-parallel=*' node ./test"
   },
   "lint-staged": {
-    "*.{js,md}": ["prettier --write", "git add"]
+    "*.{js,md}": [
+      "prettier --write",
+      "git add"
+    ]
   },
   "repository": {
     "type": "git",
