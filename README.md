@@ -21,3 +21,40 @@ messages from Amazon SQS.
 
 With sqs-parallel you need just to configure your AWS private keys, setup one or
 more `message` event listeners and wait for new messages to arrive.
+
+## Install
+
+```bash
+npm install sqs-parallel --save
+```
+
+## Example
+
+```js
+const SqsQueueParallel = require('sqs-queue-parallel');
+
+// Simple configuration:
+//  - 2 concurrency listeners
+//  - each listener can receive up to 4 messages
+// With this configuration you could receive and parse 8 `message` events in parallel
+const queue = new SqsQueueParallel({
+  name: 'sqs-test',
+  maxNumberOfMessages: 4,
+  concurrency: 2
+});
+
+queue.on('message', e => {
+  console.log('New message: ', e.metadata, e.data.MessageId);
+  e.deleteMessage().then(() => {
+    e.next();
+  });
+});
+
+queue.on('error', err => {
+  console.log('There was an error: ', err);
+});
+```
+
+## License
+
+This software is released under the [MIT License](LICENSE).
