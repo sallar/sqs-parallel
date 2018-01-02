@@ -7,7 +7,7 @@ const log = debug('sqs-parallel:log');
 const error = debug('sqs-parallel:error');
 
 export type OutgoingMessage = {
-  delay: number;
+  delay?: number;
   body: any;
 };
 
