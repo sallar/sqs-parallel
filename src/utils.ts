@@ -1,18 +1,13 @@
-function times(count, fn) {
+export function times(count: number, fn: any) {
   return Array(count)
-    .fill()
+    .fill(null)
     .forEach((_, index) => fn(index));
 }
 
-function jsonParse(str) {
+export function jsonParse(str: string) {
   let obj;
   try {
     obj = JSON.parse(str);
   } catch (err) {}
   return obj;
 }
-
-module.exports = {
-  times,
-  jsonParse
-};

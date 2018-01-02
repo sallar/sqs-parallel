@@ -1,39 +1,59 @@
-const { SQS } = require('aws-sdk');
-const { EventEmitter } = require('events');
-const { times, jsonParse } = require('./utils');
-const debug = require('debug');
+import { SQS, AWSError, Response } from 'aws-sdk';
+import { EventEmitter } from 'events';
+import { times, jsonParse } from './utils';
+import * as debug from 'debug';
 
 const log = debug('sqs-parallel:log');
 const error = debug('sqs-parallel:error');
 
-class SqsParallel extends EventEmitter {
-  constructor(config = {}) {
+export type OutgoingMessage = {
+  delay: number;
+  body: any;
+};
+
+export type Config = {
+  region?: string;
+  accessKeyId?: string;
+  secretAccessKey?: string;
+  visibilityTimeout?: number;
+  waitTimeSeconds?: number;
+  maxNumberOfMessages?: number;
+  name: string;
+  concurrency?: number;
+  debug?: boolean;
+};
+
+export class SqsParallel extends EventEmitter {
+  private client: SQS | null;
+  private url: string | null;
+  private config: Config;
+
+  constructor(config: Config) {
     super();
     this.client = null;
     this.url = null;
-    this.config = Object.assign(
-      {
-        region: process.env.AWS_REGION,
-        accessKeyId: process.env.AWS_ACCESS_KEY,
-        secretAccessKey: process.env.AWS_SECRET_KEY,
-        visibilityTimeout: null,
-        waitTimeSeconds: 20,
-        maxNumberOfMessages: 1,
-        name: '',
-        concurrency: 1,
-        debug: false
-      },
-      config
-    );
+    this.config = {
+      region: process.env.AWS_REGION,
+      accessKeyId: process.env.AWS_ACCESS_KEY,
+      secretAccessKey: process.env.AWS_SECRET_KEY,
+      visibilityTimeout: undefined,
+      waitTimeSeconds: 20,
+      maxNumberOfMessages: 1,
+      concurrency: 1,
+      debug: false,
+      ...config
+    };
 
-    this.on('newListener', name => {
+    this.on('newListener', (name: string) => {
       if (name !== 'message') {
         return;
       }
       if (this.client === null || this.listeners('message').length === 1) {
         return this.connect()
           .then(() => {
-            times(this.config.concurrency || 1, index => this.readQueue(index));
+            times(this.config.concurrency || 1, (index: number) =>
+              this.readQueue(index)
+            );
           })
           .catch(err => {
             this.emit('error', err);
@@ -48,16 +68,16 @@ class SqsParallel extends EventEmitter {
     }
   }
 
-  connect() {
+  connect(): Promise<SQS> {
     return new Promise((resolve, reject) => {
       if (!this.client || !this.url) {
-        this.once('connect', () => resolve());
+        this.once('connect', () => resolve(this.client!));
         if (this.client && !this.url) {
           return;
         }
       }
       if (this.client) {
-        return resolve();
+        return resolve(this.client);
       }
       this.client = new SQS({
         region: this.config.region,
@@ -70,32 +90,35 @@ class SqsParallel extends EventEmitter {
         })
         .promise()
         .then(data => {
-          this.emit('connect', data.QueueUrl);
-          this.url = data.QueueUrl;
+          this.emit('connect', data.QueueUrl!);
+          this.url = data.QueueUrl!;
         })
         .catch(err => reject(err));
     });
   }
 
-  readQueue(index) {
+  readQueue(index: number) {
     // Call myself on next tick helper
     const next = () => {
       process.nextTick(() => this.readQueue(index));
     };
+
     // No listeners or hasn't been connected yet.
     if (this.listeners('message').length === 0 || !this.url) {
       return;
     }
+
+    if (this.client === null) {
+      return;
+    }
+
     this.client
       .receiveMessage({
         QueueUrl: this.url,
         AttributeNames: ['All'],
         MaxNumberOfMessages: this.config.maxNumberOfMessages,
         WaitTimeSeconds: this.config.waitTimeSeconds,
-        VisibilityTimeout:
-          this.config.visibilityTimeout !== null
-            ? this.config.visibilityTimeout
-            : undefined
+        VisibilityTimeout: this.config.visibilityTimeout
       })
       .promise()
       .then(data => {
@@ -109,18 +132,17 @@ class SqsParallel extends EventEmitter {
         data.Messages.forEach(message => {
           this.emit('message', {
             type: 'Message',
-            data: jsonParse(message.Body) || message.Body,
+            data: jsonParse(message.Body!) || message.Body,
             message,
-            metadata: data.ResponseMetadata,
             url: this.url,
             name: this.config.name,
             workerIndex: index,
             next,
-            deleteMessage: () => this.deleteMessage(message.ReceiptHandle),
-            delay: timeout =>
-              this.changeMessageVisibility(message.ReceiptHandle, timeout),
-            changeMessageVisibility: timeout =>
-              this.changeMessageVisibility(message.ReceiptHandle, timeout)
+            deleteMessage: () => this.deleteMessage(message.ReceiptHandle!),
+            delay: (timeout: number) =>
+              this.changeMessageVisibility(message.ReceiptHandle!, timeout),
+            changeMessageVisibility: (timeout: number) =>
+              this.changeMessageVisibility(message.ReceiptHandle!, timeout)
           });
         });
       })
@@ -129,37 +151,40 @@ class SqsParallel extends EventEmitter {
       });
   }
 
-  sendMessage(message = {}) {
-    if (message === null) {
-      message = {};
+  sendMessage(message: OutgoingMessage) {
+    if (!message) {
+      message = {
+        body: {},
+        delay: 0
+      };
     }
-    return this.connect().then(() => {
-      return this.client
+    return this.connect().then(client => {
+      return client
         .sendMessage({
-          MessageBody: JSON.stringify(message.body || {}),
-          QueueUrl: this.url,
+          MessageBody: JSON.stringify(message.body),
+          QueueUrl: this.url!,
           DelaySeconds: typeof message.delay === 'number' ? message.delay : 0
         })
         .promise();
     });
   }
 
-  deleteMessage(receiptHandle) {
-    return this.connect().then(() => {
-      return this.client
+  deleteMessage(receiptHandle: string) {
+    return this.connect().then(client => {
+      return client
         .deleteMessage({
-          QueueUrl: this.url,
+          QueueUrl: this.url!,
           ReceiptHandle: receiptHandle
         })
         .promise();
     });
   }
 
-  changeMessageVisibility(receiptHandle, timeout = 30) {
-    return this.connect().then(() => {
-      return this.client
+  changeMessageVisibility(receiptHandle: string, timeout = 30) {
+    return this.connect().then(client => {
+      return client
         .changeMessageVisibility({
-          QueueUrl: this.url,
+          QueueUrl: this.url!,
           ReceiptHandle: receiptHandle,
           VisibilityTimeout: timeout
         })
@@ -167,7 +192,3 @@ class SqsParallel extends EventEmitter {
     });
   }
 }
-
-module.exports = {
-  SqsParallel
-};

@@ -1,4 +1,4 @@
-const { SqsParallel } = require('../src');
+const { SqsParallel } = require('../dist');
 const assert = require('assert');
 
 const RAND = new Date().getSeconds();
