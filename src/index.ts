@@ -28,7 +28,7 @@ export class SqsParallel extends EventEmitter {
   private url: string | null;
   private config: Config;
 
-  constructor(config = {}) {
+  constructor(config: Config) {
     super();
     this.client = null;
     this.url = null;
@@ -39,7 +39,6 @@ export class SqsParallel extends EventEmitter {
       visibilityTimeout: undefined,
       waitTimeSeconds: 20,
       maxNumberOfMessages: 1,
-      name: '',
       concurrency: 1,
       debug: false,
       ...config
