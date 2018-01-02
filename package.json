@@ -18,13 +18,13 @@
   },
   "scripts": {
     "build": "tsc",
-    "format": "prettier --write *.{js,md}",
+    "format": "prettier --write *.{js,ts,md}",
     "precommit": "lint-staged",
     "pretest": "npm run build",
     "test": "DEBUG='sqs-parallel=*' node ./test"
   },
   "lint-staged": {
-    "*.{js,md}": [
+    "*.{js,ts,md}": [
       "prettier --write",
       "git add"
     ]

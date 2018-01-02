@@ -9,31 +9,41 @@ const error = debug('sqs-parallel:error');
 export type OutgoingMessage = {
   delay: number;
   body: any;
-}
+};
+
+export type Config = {
+  region?: string;
+  accessKeyId?: string;
+  secretAccessKey?: string;
+  visibilityTimeout?: number;
+  waitTimeSeconds?: number;
+  maxNumberOfMessages?: number;
+  name: string;
+  concurrency?: number;
+  debug?: boolean;
+};
 
 export class SqsParallel extends EventEmitter {
   private client: SQS | null;
   private url: string | null;
-  private config: any;
+  private config: Config;
 
   constructor(config = {}) {
     super();
     this.client = null;
     this.url = null;
-    this.config = Object.assign(
-      {
-        region: process.env.AWS_REGION,
-        accessKeyId: process.env.AWS_ACCESS_KEY,
-        secretAccessKey: process.env.AWS_SECRET_KEY,
-        visibilityTimeout: null,
-        waitTimeSeconds: 20,
-        maxNumberOfMessages: 1,
-        name: '',
-        concurrency: 1,
-        debug: false
-      },
-      config
-    );
+    this.config = {
+      region: process.env.AWS_REGION,
+      accessKeyId: process.env.AWS_ACCESS_KEY,
+      secretAccessKey: process.env.AWS_SECRET_KEY,
+      visibilityTimeout: undefined,
+      waitTimeSeconds: 20,
+      maxNumberOfMessages: 1,
+      name: '',
+      concurrency: 1,
+      debug: false,
+      ...config
+    };
 
     this.on('newListener', (name: string) => {
       if (name !== 'message') {
@@ -42,7 +52,9 @@ export class SqsParallel extends EventEmitter {
       if (this.client === null || this.listeners('message').length === 1) {
         return this.connect()
           .then(() => {
-            times(this.config.concurrency || 1, (index: number) => this.readQueue(index));
+            times(this.config.concurrency || 1, (index: number) =>
+              this.readQueue(index)
+            );
           })
           .catch(err => {
             this.emit('error', err);
@@ -107,10 +119,7 @@ export class SqsParallel extends EventEmitter {
         AttributeNames: ['All'],
         MaxNumberOfMessages: this.config.maxNumberOfMessages,
         WaitTimeSeconds: this.config.waitTimeSeconds,
-        VisibilityTimeout:
-          this.config.visibilityTimeout !== null
-            ? this.config.visibilityTimeout
-            : undefined
+        VisibilityTimeout: this.config.visibilityTimeout
       })
       .promise()
       .then(data => {
