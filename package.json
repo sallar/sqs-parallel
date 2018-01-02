@@ -7,12 +7,15 @@
     "aws-sdk": "^2.162.0"
   },
   "devDependencies": {
+    "@types/debug": "0.0.30",
+    "@types/node": "^8.5.2",
     "aws-sdk": "^2.163.0",
     "husky": "^0.14.3",
     "lint-staged": "^6.0.0",
     "prettier": "^1.9.1"
   },
   "scripts": {
+    "build": "tsc",
     "format": "prettier --write *.{js,md}",
     "precommit": "lint-staged",
     "test": "DEBUG='sqs-parallel=*' node ./test"
