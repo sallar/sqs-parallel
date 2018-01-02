@@ -2,7 +2,8 @@
   "name": "sqs-parallel",
   "version": "1.1.0",
   "description": "",
-  "main": "src/index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "peerDependencies": {
     "aws-sdk": "^2.162.0"
   },
