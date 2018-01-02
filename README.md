@@ -31,7 +31,7 @@ npm install sqs-parallel --save
 ## Example
 
 ```js
-const SqsQueueParallel = require('sqs-queue-parallel');
+const SqsQueueParallel = require('sqs-parallel');
 
 // Simple configuration:
 //  - 2 concurrency listeners
