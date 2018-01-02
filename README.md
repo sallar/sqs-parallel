@@ -31,13 +31,13 @@ npm install sqs-parallel --save
 ## Example
 
 ```js
-const SqsQueueParallel = require('sqs-parallel');
+const { SqsParallel } = require('sqs-parallel');
 
 // Simple configuration:
 //  - 2 concurrency listeners
 //  - each listener can receive up to 4 messages
 // With this configuration you could receive and parse 8 `message` events in parallel
-const queue = new SqsQueueParallel({
+const queue = new SqsParallel({
   name: 'sqs-test',
   maxNumberOfMessages: 4,
   concurrency: 2
