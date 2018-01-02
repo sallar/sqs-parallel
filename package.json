@@ -20,6 +20,7 @@
     "build": "tsc",
     "format": "prettier --write *.{js,ts,md}",
     "precommit": "lint-staged",
+    "prepare": "npm run build",
     "pretest": "npm run build",
     "test": "DEBUG='sqs-parallel=*' node ./test"
   },
