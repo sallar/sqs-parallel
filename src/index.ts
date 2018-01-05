@@ -23,6 +23,26 @@ export type Config = {
   debug?: boolean;
 };
 
+export interface Message {
+  type: string;
+  data: any;
+  message: any;
+  url: string;
+  name: string;
+  workerIndex: number;
+  next: Function;
+  deleteMessage: () => Promise<any>;
+  delay: (timeout: number) => Promise<any>;
+  changeMessageVisibility: (timeout: number) => Promise<any>;
+}
+
+export declare interface SqsParallel {
+  on(event: 'message', listener: (message: Message) => any): this;
+  on(event: 'error', listener: (err: Error) => any): this;
+  on(event: 'connect', listener: (queueUrl: string) => any): this;
+  on(event: string, listener: Function): this;
+}
+
 export class SqsParallel extends EventEmitter {
   private client: SQS | null;
   private url: string | null;
@@ -63,7 +83,6 @@ export class SqsParallel extends EventEmitter {
 
     if (this.config.debug) {
       this.on('error', err => error(err));
-      this.on('connection', queues => log('Connecting...', queues));
       this.on('connect', queue => log('Connected', queue));
     }
   }
